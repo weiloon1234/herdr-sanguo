@@ -1,0 +1,4 @@
+# Written by Herdr into any mod folder it checks: not part of this layout.
+mods/*/gpui-kit.d.ts
+mods/*/jsconfig.json
+.DS_Store
