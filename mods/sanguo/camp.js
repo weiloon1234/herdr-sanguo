@@ -8,7 +8,7 @@ import { setAgentOrder, theme } from "herdr";
 import { BRUSH_FONT, kingdomOf, kingdomChip, dutyOf, dutyWord } from "./kingdoms.js";
 import { currentMachine, machineLabel, machineNames, needsYou, goToMachine } from "./machines.js";
 import { pic, on, soldier, firstFrame, textFrames } from "./actors.js";
-import { sidebarIsNarrow, openSession, backToField, showingNotes } from "./views.js";
+import { sidebarIsNarrow, openSession, backToField, showingNotes, openedOver } from "./views.js";
 import { sessionFacts, sessionMenu, campSummary, closeSession, spokenTitle } from "./sessions.js";
 import { keyName } from "./key-hints.js";
 import { machineBar } from "./machine-bar.js";
@@ -75,7 +75,8 @@ export default class Camp {
   // Its title first, to find it by: the tool's mark says which CLI it is. Until the CLI names the
   // session, the tool's name stands in. Then its project, then how it's doing and its key.
   sessionTile(st, t) {
-    const open = st.space.active && st.tab.active && !showingNotes(); // Notes shows no session.
+    // Notes opened over a session is still about it (its project's notes); from the 校场, about none.
+    const open = st.space.active && st.tab.active && (!showingNotes() || openedOver() !== "field");
     const program = st.program?.name ?? "Terminal";
     const color = st.holder ? kingdomOf(st.holder).color : t.accent, hovered = this.hovered === st.tab.id;
     return tile(`tile-${st.tab.id}`, t).relative()

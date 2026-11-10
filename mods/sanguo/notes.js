@@ -1,12 +1,15 @@
 // Notes: a scratchpad in the session area, opened like Changes, with a tab per note. Each machine keeps
 // its own notes on its disk (notes-store.js), so every window connected to it shows and edits the same
 // ones. Typing saves by itself, and what another window writes shows up here within seconds.
-import { div } from "gpui-kit";
+// Opened over a session, it starts on that session's project, and switches between it and the
+// machine's general notes; opened from the 校场 it's the general notes alone.
+import { div, svg } from "gpui-kit";
 import { v_flex, h_flex, TextareaState, Textarea } from "gpui-base";
 import { settings, shared, setShared, theme, window } from "herdr";
-import { currentMachine, machineKey, machineLabel, machineLayout } from "./machines.js";
-import { closeNotes, showingNotes } from "./views.js";
-import { closeNote, dropNote, listNotes, newNoteId, noteTitle, readNotes, reopenNote, writeNote } from "./notes-store.js";
+import { currentMachine, machineKey, machineLabel, machineLayout, shownSpace } from "./machines.js";
+import { closeNotes, openedOver, showingNotes } from "./views.js";
+import { projectOfSpace } from "./projects.js";
+import { GENERAL, closeNote, dropNote, listNotes, newNoteId, noteTitle, projectScope, readNotes, reopenNote, writeNote } from "./notes-store.js";
 import { icon, iconButton, spinner } from "./changes-ui.js";
 import { barButton, tabChip, tabClose, tabRow } from "./tab-strip.js";
 import { keyHint } from "./key-hints.js";
@@ -15,12 +18,15 @@ const TICK_MS = 400;
 const SAVE_PAUSE_MS = 600, SAVE_EVERY_MS = 4000; // After a pause in typing, and at least this often during it.
 const LOOK_MS = 3000, LOOK_BEHIND_MS = 20000, RETRY_MS = 8000; // For what other windows wrote.
 const UNDO_MS = 10000, SAY_MS = 12000;
-const SELECTED = "sanguo.notes-tab"; // machine -> the note this window shows there
-const PLACEHOLDER = "Anything to keep at hand: a todo, a key, a command. It saves as you type.";
+const SELECTED = "sanguo.notes-tab"; // machine|scope -> the note this window shows there
+const GENERAL_HINT = "Anything to keep at hand: a todo, a key, a command. It saves as you type.";
+const FILE_ICON = "mods/workspace-chrome/file-text.svg", FOLDER_ICON = "mods/files/folder.svg";
 
-// One machine's notes, as this window has them.
+const bookKey = (machine, scope) => `${machineKey(machine)}|${scope}`;
+
+// One machine's notes in one scope, as this window has them. `name`: the project's, for a project.
 class Book {
-  constructor(machine) { this.machine = machine; }
+  constructor(machine, scope, name) { this.machine = machine; this.scope = scope; this.name = name; this.key = bookKey(machine, scope); }
   notes = []; // In the order they were made.
   gone = new Set(); // Closed here: whatever a look already on its way says, they stay closed.
   loaded = false;
@@ -36,6 +42,7 @@ export default class Notes {
     this.handle = cx.focus_handle();
     this.typing = false;
     this.shownOn = null; // The machine whose notes are on screen, while they are.
+    this.choice = {}; // Machine -> the scope chosen there, while Notes shows.
     this.focusNext = null; // A note to put the keyboard in once drawn, or "view".
     this.closed = null; // { machine, id, title, until }: what Undo brings back.
     this.said = null; // { text, until }
@@ -43,20 +50,49 @@ export default class Notes {
     cx.timer.every(TICK_MS, (cx) => this.tick(cx));
   }
 
-  book(machine = currentMachine()) {
-    const key = machineKey(machine);
-    if (!this.books.has(key)) this.books.set(key, new Book(machine));
-    return this.books.get(key);
+  book(machine, scope, name) {
+    const key = bookKey(machine, scope);
+    if (!this.books.has(key)) this.books.set(key, new Book(machine, scope, name));
+    const book = this.books.get(key);
+    if (name) book.name = name; // A project renamed meanwhile.
+    return book;
+  }
+
+  // The project of the session Notes was opened over, if it was: { scope, name }.
+  context() {
+    const over = openedOver(), space = shownSpace();
+    if ((over !== "session" && over !== "changes") || !space) return null;
+    const project = projectOfSpace(space.id);
+    return project?.folder ? { scope: projectScope(project.folder), name: project.name } : null;
+  }
+
+  // The notes on screen: the project's or the general ones, as chosen.
+  shownBook() {
+    const machine = currentMachine(), context = this.context();
+    return context && this.choice[machineKey(machine)] === context.scope ? this.book(machine, context.scope, context.name) : this.book(machine, GENERAL);
+  }
+
+  choose(scope, cx) {
+    const key = machineKey(currentMachine());
+    if (this.choice[key] === scope) return;
+    this.choice[key] = scope;
+    const book = this.shownBook();
+    this.focusNext = book.loaded ? this.selected(book) : "view";
+    cx.notify();
   }
 
   selected(book) {
-    const want = shared(SELECTED)?.[machineKey(book.machine)];
+    const want = shared(SELECTED)?.[book.key];
     return book.notes.find((n) => n.id === want) ?? book.notes[book.notes.length - 1] ?? null;
   }
 
   select(book, note) {
-    setShared(SELECTED, { ...(shared(SELECTED) ?? {}), [machineKey(book.machine)]: note.id });
-    if (machineKey(book.machine) === this.shownOn) this.focusNext = note;
+    setShared(SELECTED, { ...(shared(SELECTED) ?? {}), [book.key]: note.id });
+    if (book === this.showing) this.focusNext = note;
+  }
+
+  hint(book) {
+    return book.scope === GENERAL ? GENERAL_HINT : `Notes for ${book.name ?? "this project"}: todos, keys, commands. It saves as you type.`;
   }
 
   say(text) {
@@ -66,7 +102,7 @@ export default class Notes {
   // `version` "-": not on the machine yet. A note never typed in stays off it.
   makeNote(book, { id, version, text }) {
     const note = { id, version, saved: text, title: noteTitle(text), changedAt: 0, dirtySince: null, saving: false, error: null, retryAt: 0, gone: false, wroteAt: 0, filler: false };
-    note.state = TextareaState.new({ value: text, placeholder: PLACEHOLDER });
+    note.state = TextareaState.new({ value: text, placeholder: this.hint(book) });
     note.state.on("change", (_e, cx) => this.changed(note, cx));
     note.state.on("focus", () => { this.typing = true; });
     note.state.on("blur", () => {
@@ -122,7 +158,7 @@ export default class Notes {
       try {
         const text = note.state.value(); // As it is when its turn comes.
         if (text !== note.saved) {
-          const r = await writeNote(book.machine, note.id, note.version, text);
+          const r = await writeNote(book.machine, book.scope, note.id, note.version, text);
           if (r.conflict !== undefined) await this.keepBoth(book, note, r.conflict);
           else { note.version = r.version; note.saved = text; note.wroteAt = Date.now(); }
         }
@@ -141,8 +177,8 @@ export default class Notes {
   // note of its own beside it, and this tab shows theirs.
   async keepBoth(book, note, theirs) {
     const mine = note.state.value(), id = newNoteId();
-    const { version } = await writeNote(book.machine, id, "-", mine);
-    const fresh = theirs === "-" ? null : (await readNotes(book.machine, [note.id]))[0];
+    const { version } = await writeNote(book.machine, book.scope, id, "-", mine);
+    const fresh = theirs === "-" ? null : (await readNotes(book.machine, book.scope, [note.id]))[0];
     const copy = this.makeNote(book, { id, version, text: mine });
     copy.wroteAt = note.wroteAt = Date.now();
     this.add(book, copy);
@@ -165,7 +201,7 @@ export default class Notes {
     if (this.closed && now >= this.closed.until) { this.closed = null; cx.notify(); }
     if (this.said && now >= this.said.until) { this.said = null; cx.notify(); }
     if (!showingNotes()) return;
-    const book = this.book();
+    const book = this.shownBook();
     if (book.busy || (book.machine && machineLayout(book.machine) === "unavailable")) return;
     const every = !book.loaded ? (book.error ? RETRY_MS : 0) : window()?.active !== false ? LOOK_MS : LOOK_BEHIND_MS;
     if (now - book.lookedAt >= every) (book.loaded ? this.look(book) : this.load(book));
@@ -176,10 +212,10 @@ export default class Notes {
     const since = Date.now();
     this.cx.spawn(async (cx) => {
       try {
-        const all = await readNotes(book.machine);
+        const all = await readNotes(book.machine, book.scope);
         this.merge(book, all, all.map((n) => n.id), since);
         book.loaded = true; book.error = null;
-        if (this.shownOn === machineKey(book.machine)) this.focusNext = this.selected(book);
+        if (book === this.showing) this.focusNext = this.selected(book);
       } catch (e) {
         book.error = String(e.message ?? e);
       } finally {
@@ -195,10 +231,10 @@ export default class Notes {
     const since = Date.now();
     this.cx.spawn(async (cx) => {
       try {
-        const listed = await listNotes(book.machine);
+        const listed = await listNotes(book.machine, book.scope);
         const have = new Map(book.notes.map((n) => [n.id, n.version]));
         const changed = listed.filter((l) => !book.gone.has(l.id) && have.get(l.id) !== l.version).map((l) => l.id);
-        const fresh = changed.length ? await readNotes(book.machine, changed) : [];
+        const fresh = changed.length ? await readNotes(book.machine, book.scope, changed) : [];
         this.merge(book, fresh, listed.map((l) => l.id), since);
         book.error = null;
       } catch (e) {
@@ -240,7 +276,7 @@ export default class Notes {
   }
 
   addNote(cx) {
-    const book = this.book();
+    const book = this.shownBook();
     if (!book.loaded) return;
     const note = this.makeNote(book, { id: newNoteId(), version: "-", text: "" });
     this.add(book, note);
@@ -258,20 +294,20 @@ export default class Notes {
     this.later(note, async (cx) => {
       try {
         if (!text.trim()) {
-          if (note.version !== "-") await dropNote(book.machine, note.id);
+          if (note.version !== "-") await dropNote(book.machine, book.scope, note.id);
           return;
         }
         let id = note.id;
         if (text !== note.saved) {
-          const r = await writeNote(book.machine, id, note.version, text);
+          const r = await writeNote(book.machine, book.scope, id, note.version, text);
           if (r.conflict !== undefined) { // Changed elsewhere too: theirs stays, and yours is what closes.
             book.gone.delete(note.id);
             id = newNoteId();
-            await writeNote(book.machine, id, "-", text);
+            await writeNote(book.machine, book.scope, id, "-", text);
           }
         }
-        await closeNote(book.machine, id);
-        this.closed = { machine: book.machine, id, title: noteTitle(text), until: Date.now() + UNDO_MS };
+        await closeNote(book.machine, book.scope, id);
+        this.closed = { book, id, title: noteTitle(text), until: Date.now() + UNDO_MS };
       } catch (e) {
         book.gone.delete(note.id); // Still there: the next look brings it back.
         this.say(`Couldn't close it on ${machineLabel(book.machine)}: ${e.message ?? e}`);
@@ -286,12 +322,12 @@ export default class Notes {
     const closed = this.closed;
     this.closed = null;
     if (!closed) return;
-    const book = this.book(closed.machine);
+    const book = closed.book;
     cx.spawn(async (cx) => {
       try {
-        await reopenNote(closed.machine, closed.id);
+        await reopenNote(book.machine, book.scope, closed.id);
         book.gone.delete(closed.id);
-        const [n] = await readNotes(closed.machine, [closed.id]);
+        const [n] = await readNotes(book.machine, book.scope, [closed.id]);
         if (n && !book.notes.some((x) => x.id === n.id)) {
           const note = this.makeNote(book, n);
           this.add(book, note);
@@ -337,10 +373,28 @@ export default class Notes {
         .child(div().text_size(12.5).font_semibold().text_color(t.foreground).child("Notes"))
         .child(div().px(5).rounded(4).border_1().border_color(t.border).text_size(10.5).text_color(t.muted)
           .tooltip(`Kept on ${machineLabel(book.machine)}, the same in every window connected to it`).child(machineLabel(book.machine))))
+      .child(this.switcher(book, t))
       .when(book.loaded, (el) => el.child(tabRow("note-tabs", book.notes.map(chip)))
         .child(barButton("note-new", "+", (_e, cx) => this.addNote(cx), t).tooltip("New note")))
       .child(div().flex_1())
       .child(iconButton("notes-close", "x", keyHint("sanguo.notes", "Close notes"), () => closeNotes(), t));
+  }
+
+  // General or this session's project, side by side. From the 校场 there's only the general notes, so
+  // it just says so.
+  switcher(book, t) {
+    const context = this.context();
+    if (!context) return div().flex_none().pr(6).text_size(12).text_color(t.dim).child("General");
+    const part = (id, scope, label, iconPath, tip) => {
+      const on = book.scope === scope;
+      return h_flex().id(id).h(24).px(9).gap(6).flex_none().max_w(200).items_center().rounded(6).cursor_pointer().text_size(12)
+        .bg(on ? t.selected : t.chrome).text_color(on ? t.foreground : t.muted).hover((s) => s.bg(on ? t.selected : t.hover))
+        .tooltip(tip).on_click((_e, cx) => this.choose(scope, cx))
+        .child(svg(iconPath).size(13).flex_none()).child(div().min_w(0).truncate().child(label));
+    };
+    return h_flex().flex_none().mr(6).p(2).gap(2).items_center().rounded(8).border(1).border_color(t.border)
+      .child(part("notes-general", GENERAL, "General", FILE_ICON, `Notes for everything on ${machineLabel(book.machine)}`))
+      .child(part("notes-project", context.scope, context.name, FOLDER_ICON, `Notes for ${context.name} only`));
   }
 
   page(book, note, t) {
@@ -358,10 +412,10 @@ export default class Notes {
   }
 
   footer(book, note, t) {
-    const where = machineLabel(book.machine);
+    const where = `${machineLabel(book.machine)} · ${book.scope === GENERAL ? "General" : book.name}`;
     const status = !book.loaded || !note ? "" : note.error ? `Not saved: ${note.error}`
       : note.saving || note.dirtySince !== null ? "Saving…" : note.version === "-" ? `Saves to ${where} as you type` : `Saved on ${where}`;
-    const closed = this.closed && machineKey(this.closed.machine) === machineKey(book.machine) ? this.closed : null;
+    const closed = this.closed?.book === book ? this.closed : null;
     return h_flex().h(28).flex_none().px(14).gap(10).items_center().border_t(1).border_color(t.border).bg(t.chrome).text_size(11.5).text_color(t.dim)
       .child(div().flex_1().min_w(0).truncate().text_color(note?.error ? t.blocked : t.dim).child(status))
       .when(Boolean(this.said), (el) => el.child(div().flex_none().max_w(460).truncate().text_color(t.muted).child(this.said.text)))
@@ -371,10 +425,14 @@ export default class Notes {
   }
 
   render(cx) {
-    if (!showingNotes()) { this.shownOn = null; return div().id("notes").size_full(); }
-    const t = theme(), book = this.book(), key = machineKey(book.machine);
+    if (!showingNotes()) { this.shownOn = null; this.showing = null; return div().id("notes").size_full(); }
+    const t = theme(), key = machineKey(currentMachine());
+    // Each time it opens: on the project of the session it opened over, or the general notes.
+    if (this.shownOn !== key) this.choice[key] = this.context()?.scope ?? GENERAL;
+    const book = this.shownBook();
     // Holds the keyboard while shown, so typing never lands in a hidden terminal.
     if (this.shownOn !== key) { this.shownOn = key; this.focusNext = book.loaded ? this.selected(book) : "view"; }
+    this.showing = book;
     const note = book.loaded ? this.selected(book) : null;
     if (this.focusNext) {
       const target = this.focusNext === "view" ? null : this.focusNext;

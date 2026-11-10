@@ -83,6 +83,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 Escape leaves the message box, then closes Changes.
 
 **Notes** (⌘J or the Notes button): fills the center. Browser-style tabs, each named by its note's first line, with `+` for a new one. Notes:
+- **General or project:** opened over a session (or its Changes), Notes starts on that session's project, and a `[General | Project]` switcher in its header flips between the project's notes and the machine's general ones. Opened from the 校场, it shows the general notes alone, with no switcher. The session's card stays highlighted while its project's notes are open.
 - **Saving:** 0.6s after you stop typing, and every 4s while you type.
 - **Where:** they belong to the machine shown. Every window connected to that machine sees the same notes, and another window's edits arrive within 3s (20s while Herdr is behind).
 - **Two windows editing one note:** both versions are kept, yours as its own tab.
@@ -140,7 +141,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 
 **What it writes:** its own data, in each machine's `~/.config/herdr-app/data/sanguo/`:
 - `machine-log.jsonl`: projects and sessions, append-only;
-- `notes/*.md`, plus `notes/closed/`;
+- `notes/general/*.md` and `notes/project/<the project's folder, with - for anything but letters and digits>/*.md`, each with its own `closed/` (notes from before projects had notes move into `general/` on their own);
 - `app-icons/`.
 
 **Network:** only through git (fetch, pull, push) and the CLIs ✨ runs.
@@ -182,6 +183,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 - `layout.switch {"name":"sanguo"}` shows the dark camp with the sidebar, tab bar, 校场 and status bar, and `herdr-app status` reports no errors.
 - Start a Claude Code session: a red Wu soldier with a C banner appears, and drills at the dummy while it works. When it finishes it cheers at the drum, and later naps by its tent. A permission prompt makes it kneel by the table with a blinking `!`, and its bubble says what it wants.
 - ⌘T opens New Session on the project in front; typing in its search filters the projects; a past session in Resume reopens it with its history.
-- ⌘J opens Notes; text typed there appears in `~/.config/herdr-app/data/sanguo/notes/<id>.md` within a second; closing the tab and pressing Undo brings it back.
+- ⌘J on the 校场 opens the general notes; text typed there appears in `~/.config/herdr-app/data/sanguo/notes/general/<id>.md` within a second; closing the tab and pressing Undo brings it back.
+- ⌘J over a session opens its project's notes, saved under `notes/project/…`; the switcher's General shows the general notes, not the project's.
 - Changes on a repo lists its changes; ticking a file stages it (`git status` agrees); a commit and push on a remote machine finish without hanging.
 - Switching machines shows that machine's own 校场, projects, history and notes.

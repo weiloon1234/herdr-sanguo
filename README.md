@@ -15,7 +15,7 @@ Every coding session on a machine becomes a soldier on a painted 校场 (drill g
 - **New Project** browses folders on any machine and can make a new folder right there, so there's no trip to Finder.
 - **New Session**, with a searchable project picker that starts on the project you're in, and a searchable list of that project's sessions to resume.
 - **Changes**, a git view: staging checkboxes, diffs, branches, fetch, pull, push, stashes, history, and ✨ commit messages written by your CLI.
-- **Notes**, a tabbed scratchpad that saves as you type. Notes belong to a machine, and every window connected to it shows the same ones.
+- **Notes**, a tabbed scratchpad that saves as you type: general notes for the machine, and notes per project. Opened over a session it starts on that project's notes, with a switch to the general ones. Notes belong to a machine, and every window connected to it shows the same ones.
 - **Several machines.** Each machine Herdr connects to has its own camp, projects, history and notes, stored on that machine. Switch with the pills at the top of the sidebar or ⌘`.
 
 ## The statuses

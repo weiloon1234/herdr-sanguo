@@ -40,6 +40,9 @@ export const showingField = () => viewNow() === FIELD;
 export const showingChanges = () => viewNow() === CHANGES;
 export const showingNotes = () => viewNow() === NOTES;
 
+// What Notes or Changes was opened over on this machine: the 校场, or a session.
+export const openedOver = () => shared(CAME_FROM)?.[machineKey(currentMachine())] ?? FIELD;
+
 // Changes and Notes open over the 校场 or a session, and close back to it. One opened over the
 // other closes back to what that one was over.
 function openOver(view) {

@@ -1,21 +1,26 @@
 // Notes, kept on each machine in its own Herdr folder (notes.sh), so every window connected to that
-// machine shows the same ones. A note is its text; its title is its first line.
+// machine shows the same ones. A note is its text; its title is its first line. Each belongs to a
+// scope: the machine's general notes, or one project's.
 import { runOn } from "./machine-script.js";
 
 const run = (machine, ...args) => runOn("notes.sh", machine, ...args);
 const PIECE = 30000; // Code units per argument: well under what one argument may hold.
 export const MAX_NOTE_BYTES = 400000; // A note goes to its machine on one command line.
 
-export async function listNotes(machine) {
-  return (await run(machine, "list")).split("\n").filter(Boolean).map((line) => {
+export const GENERAL = "general";
+// A project's notes are kept by its folder's path, with everything but letters and digits as -.
+export const projectScope = (folder) => `project/${folder.replace(/[^A-Za-z0-9]/g, "-")}`;
+
+export async function listNotes(machine, scope) {
+  return (await run(machine, "list", scope)).split("\n").filter(Boolean).map((line) => {
     const [id, version] = line.split(" ");
     return { id, version };
   });
 }
 
 // Those notes, or every one without ids.
-export async function readNotes(machine, ids = []) {
-  return (await run(machine, "read", ...ids)).split("\x1e").slice(1).map((record) => {
+export async function readNotes(machine, scope, ids = []) {
+  return (await run(machine, "read", scope, ...ids)).split("\x1e").slice(1).map((record) => {
     const end = record.indexOf("\n"), [id, version] = record.slice(0, end).split(" ");
     return { id, version, text: record.slice(end + 1) };
   });
@@ -23,15 +28,15 @@ export async function readNotes(machine, ids = []) {
 
 // Only over the version it was read at ("-" for one not written yet): { version } after, or
 // { conflict } with the version another window left there first ("-" if it closed it).
-export async function writeNote(machine, id, was, text) {
+export async function writeNote(machine, scope, id, was, text) {
   if (utf8Bytes(text) > MAX_NOTE_BYTES) throw new Error("Too long to save. Split it into two notes.");
-  const said = (await run(machine, "write", id, was, ...pieces(text))).trim();
+  const said = (await run(machine, "write", scope, id, was, ...pieces(text))).trim();
   return said.startsWith("conflict ") ? { conflict: said.slice(9) } : { version: said };
 }
 
-export const closeNote = (machine, id) => run(machine, "close", id);
-export const reopenNote = (machine, id) => run(machine, "reopen", id);
-export const dropNote = (machine, id) => run(machine, "drop", id);
+export const closeNote = (machine, scope, id) => run(machine, "close", scope, id);
+export const reopenNote = (machine, scope, id) => run(machine, "reopen", scope, id);
+export const dropNote = (machine, scope, id) => run(machine, "drop", scope, id);
 
 // Starts with the time, so sorting by id is the order they were made in.
 export const newNoteId = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6).padEnd(4, "0")}`;
