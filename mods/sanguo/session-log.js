@@ -3,12 +3,12 @@
 // Only the CLI knows the id a session resumes by, so that's asked once (session-history.sh). The
 // same script brings in a project's older sessions, the first time its history is opened and
 // whenever you ask again. It's all kept on the machine it's about (machine-store.js).
-import { panes, setShared, spaces, terminals, window } from "herdr";
+import { agents, panes, run, setShared, shared, spaces, terminals, window } from "herdr";
 import { runOn } from "./machine-script.js";
 import { addToStore, applyToProjects, readStore, replaceStore, storeSize } from "./machine-store.js";
 import { currentMachine, machineKey, machineLayout, machineNames } from "./machines.js";
 import { projectId, setProjectsOf } from "./projects.js";
-import { LIVE_TITLES, spokenTitle, tabIsNamed } from "./sessions.js";
+import { AUTO_NAMES, LIVE_TITLES, ownTabName, spokenTitle, tabIsNamed } from "./sessions.js";
 
 export const TOOLS = {
   // `exact`: it can say which session a process is on, so that's asked again after every turn.
@@ -22,6 +22,7 @@ const MY_TITLES = [...Object.values(TOOLS).flatMap((tool) => [tool.name, tool.bi
 const MAX_SESSIONS = 1500, TITLE_MAX = 120, SHORTEN_AT = 600000; // A log past this size starts again from what it adds up to.
 const IMPORT_EACH = 200; // Of each CLI.
 const WATCH_MS = 1000, SAVE_AFTER_MS = 2000, RETRY_SAVE_MS = 30000, RETRY_IMPORT_MS = 60000;
+const RENAME_WAIT_MS = 5000, TAB_NAME_MAX = 60; // A rename lands in a moment; a tab's name stays short.
 const LOOK_SHOWN_MS = 5000, LOOK_BEHIND_MS = 30000, LOOK_ELSEWHERE_MS = 60000; // For what other windows added.
 const LOOK_AGAIN_S = [10, 30, 60, 300]; // A record can appear a little after the turn that made it.
 
@@ -74,7 +75,8 @@ function idInArgv(tool, argv) {
 
 // What the session calls itself: a tab you named, or the CLI's title without its name and folder.
 function titleOf(terminal, tab, folders) {
-  if (tabIsNamed(tab)) return cleanText(tab.name);
+  const own = ownTabName(tab);
+  if (own) return cleanText(own);
   const skip = new Set([...MY_TITLES, ...folders.map((folder) => baseName(folder)?.toLowerCase())]);
   return cleanText(spokenTitle(terminal.title).split(" | ").map((part) => part.trim()).filter((part) => part && !skip.has(part.toLowerCase())).join(" | "));
 }
@@ -167,6 +169,7 @@ export async function whereRunning(session, machine) {
 export class SessionLog {
   records = new Map(); // Machine -> what's known of it.
   tracks = new Map(); // Terminal address -> the session running there.
+  renamed = new Map(); // Tab -> { name, at }: asked for, and not landed yet.
   importing = new Set();
   failedImport = new Map(); // Project -> when.
   version = 0; // Goes up with anything a history would show.
@@ -275,10 +278,45 @@ export class SessionLog {
       const title = track.title || (track.id && this.recordOf(track.machine).sessions.get(`${track.tool}:${track.id}`)?.title);
       if (title && track.tab) titles[track.tab] ??= title;
     }
+    this.nameTabs(titles);
     const text = JSON.stringify(titles);
     if (text === this.publishedTitles) return;
     this.publishedTitles = text;
     setShared(LIVE_TITLES, titles);
+  }
+
+  // Herdr's own alerts call a session by its project and tab ("web-app / 1"), so a tab still called
+  // by its number takes its session's title, and follows it as it changes. A name you gave a tab is
+  // yours and stays; so is one another window gave it, which that window looks after. Once no CLI
+  // is left in the tab, it's called by its number again.
+  nameTabs(titles) {
+    const mine = { ...(shared(AUTO_NAMES) ?? {}) }, now = Date.now();
+    const tabs = new Map(spaces().flatMap((s) => (s.tabs ?? []).map((tab) => [tab.id, tab])));
+    // A CLI still in the tab, whether or not it has reported, or been looked at since a restart.
+    const cli = new Set(terminals().filter((t) => t.state === "live" && toolOf(t)).map((t) => t.address));
+    const withCli = new Set([...agents().map((a) => a.tab), ...panes().filter((p) => cli.has(p.terminal)).map((p) => p.tab)]);
+    const ask = (id, name) => {
+      const asked = this.renamed.get(id);
+      if (asked && asked.name === name && now - asked.at < RENAME_WAIT_MS) return;
+      this.renamed.set(id, { name, at: now });
+      run("tab.rename", { id, name });
+    };
+    for (const [id, tab] of tabs) {
+      // Ours: still numbered, or a name this window gave it or asked for.
+      const ours = !tabIsNamed(tab) || tab.name === mine[id] || tab.name === this.renamed.get(id)?.name;
+      if (!ours) { delete mine[id]; continue; }
+      const want = titles[id] ? spokenTitle(titles[id]).slice(0, TAB_NAME_MAX) : "";
+      if (want) {
+        if (tab.name === want) mine[id] = want;
+        else ask(id, want);
+      } else if (tabIsNamed(tab) && !withCli.has(id)) {
+        ask(id, ""); // Called by its number again.
+        delete mine[id];
+      }
+    }
+    for (const id of Object.keys(mine)) if (!tabs.has(id)) delete mine[id];
+    for (const id of this.renamed.keys()) if (!tabs.has(id)) this.renamed.delete(id);
+    if (JSON.stringify(mine) !== JSON.stringify(shared(AUTO_NAMES) ?? {})) setShared(AUTO_NAMES, mine);
   }
 
   // A CLI in a terminal, new to us. After a restart the record says which session it was on.

@@ -9,7 +9,14 @@ import { sessionsOn } from "./machines.js";
 // follows the CLIs, keeps this up to date.
 export const LIVE_TITLES = "sanguo.live-titles";
 
-export const sessionTitle = (tab) => shared(LIVE_TITLES)?.[tab.id] ?? (tabIsNamed(tab) ? tab.name : null);
+// Tabs named after their session's title by this mod, by tab: such a name is only the title again,
+// and may be stale once the CLI is gone, so it never stands in for one. A name you gave a tab does.
+export const AUTO_NAMES = "sanguo.tab-names";
+
+// A name you gave the tab, not one this mod gave it after its session.
+export const ownTabName = (tab) => (tabIsNamed(tab) && tab.name !== shared(AUTO_NAMES)?.[tab.id] ? tab.name : null);
+
+export const sessionTitle = (tab) => shared(LIVE_TITLES)?.[tab.id] ?? ownTabName(tab);
 
 const WAITING_ON = { permission: "Needs your permission", question: "Has a question", auth: "Needs you to sign in" };
 
@@ -53,7 +60,7 @@ export function sessionFacts(machine) {
       tab, space, number: i + 1, fighters, marks, holder, status, address,
       who: k?.id ?? "min",
       kids: reporting.reduce((sum, a) => sum + (kidsOf.get(a.address)?.length ?? 0), 0),
-      named: tabIsNamed(tab),
+      named: Boolean(ownTabName(tab)),
       title: sessionTitle(tab),
       program: lead?.program ?? here[0]?.program,
       line: status === "none" ? NO_FIGHTER.about : detail(lead, terminalAt.get(address)),

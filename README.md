@@ -10,7 +10,7 @@ Every coding session on a machine becomes a soldier on a painted 校场 (drill g
 
 - **The 校场.** Every session on the machine has a station: its kingdom's banner, its soldier acting out the status, and a bubble with the project and the session's title. Day and night art switch on their own (Auto), or pin Light or Dark.
 - **Kingdoms mark the CLI.** Claude Code is 吴 Wu (red, C), Codex is 魏 Wei (blue, X), Antigravity is 蜀 Shu (green, A), and anything else, OpenCode included, is 群 Qun (gold).
-- **Browser-style session tabs**, numbered 1 to n, with `+` right after the last one. Beside an open session, the sidebar shows a card per session: title first, then project, then status and its ⌘ key.
+- **Browser-style session tabs**, numbered 1 to n, with `+` right after the last one. Each tab takes its session's title as its name, so Herdr's own alerts say which session finished or needs you. Beside an open session, the sidebar shows a card per session: title first, then project, then status and its ⌘ key.
 - **Projects and their history.** Each project lists its past sessions from the CLIs' own records, one line each. A click jumps to an open session or resumes a closed one.
 - **New Session**, with a searchable project picker that starts on the project you're in, and a searchable list of that project's sessions to resume.
 - **Changes**, a git view: staging checkboxes, diffs, branches, fetch, pull, push, stashes, history, and ✨ commit messages written by your CLI.

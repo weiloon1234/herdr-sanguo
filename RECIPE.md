@@ -59,6 +59,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 - A click on a bubble, tab or card opens the session, and ⌘1..⌘0 open sessions 1 to 10.
 - The × on a bubble, tab or card ends it. An idle or done session ends at once; a working or blocked one asks first.
 - Double-clicking a tab renames it; right-clicking a tab or card opens Herdr's tab menu.
+- **Tab names:** a session's tab takes its session's title as its name and follows it, so Herdr's own alerts say which session ("Claude Code finished · web-app / Fix the login redirect" rather than "/ 1"). A name you give a tab yourself is kept, and when the CLI exits the tab goes back to its number. Only the window that named a tab keeps it up to date; other windows leave it alone.
 
 **New session** (⌘T, the tab bar's `+`, the sidebar's `+`, a project's `+`): a 540px dialog.
 - **Project:** a dropdown with a search box (name, folder or machine; ↑↓ and Enter), 7 rows at most, grouped by machine, with "New project…" at the bottom. It starts on the project of the session in front.
