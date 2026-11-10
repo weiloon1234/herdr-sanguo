@@ -1,7 +1,7 @@
 // New Session: pick a project, pick a CLI, start. New Project: save a folder as a project.
 import { div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, Popup } from "gpui-base";
-import { theme, props, closeOverlay, run, spaces, knownAgents, pickFolder, home, shared, setShared } from "herdr";
+import { theme, props, closeOverlay, run, spaces, knownAgents, home, shared, setShared } from "herdr";
 import { sessionTitle } from "./sessions.js";
 import { kingdomOf } from "./kingdoms.js";
 import { currentMachine, machineLabel, machineNames } from "./machines.js";
@@ -370,19 +370,11 @@ export class NewProject {
     cx.notify();
   }
 
-  // The system's picker only knows this computer.
+  // The same browser on every machine, this one too: it can make a new folder where you are.
   browse(cx) {
-    if (this.machine) {
-      if (this.browser.isOpen) this.browser.close();
-      else this.browser.open(this.folder.value().trim(), this.machine, cx);
-      cx.notify();
-      return;
-    }
-    cx.spawn(async (cx) => {
-      const chosen = await pickFolder({ prompt: "Choose the project's folder" });
-      if (chosen) this.folder.set_value(chosen);
-      cx.notify();
-    });
+    if (this.browser.isOpen) this.browser.close();
+    else this.browser.open(this.folder.value().trim(), this.machine, cx);
+    cx.notify();
   }
 
   render() {
@@ -392,7 +384,8 @@ export class NewProject {
     return v_flex().id("new-project").track_focus(this.handle)
       .on_key_down((e, cx) => {
         if (e.key !== "escape") return;
-        if (this.browser.isOpen) { this.browser.close(); cx.notify(); } else closeOverlay(props().overlay);
+        if (this.browser.stopNaming(cx)) { /* Only the new folder's name goes. */ }
+        else if (this.browser.isOpen) { this.browser.close(); cx.notify(); } else closeOverlay(props().overlay);
         cx.stop_propagation();
       })
       .w_full().min_h(0).p(DIALOG_PAD).bg(t.popover).text_color(t.foreground)

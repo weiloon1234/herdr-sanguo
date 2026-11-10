@@ -66,7 +66,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 - **Tool:** chips for the CLIs installed on that machine, plus Terminal.
 - **Resume a session:** if the project has history, a searchable list of its past sessions underneath. A click goes to it if open, or resumes it.
 
-**New project** (⌘N, the folder-plus): a folder (typed or Browse; Browse lists folders on a remote machine) and a name. Next saves it and goes on to New Session.
+**New project** (⌘N, the folder-plus): a folder (typed, or picked with Browse) and a name. Browse lists the folders on the chosen machine, this one or a remote one, and its folder-plus button makes a new folder where you are, then opens it. A name already there, or one with `/`, is refused inline. Next saves it and goes on to New Session.
 
 **Project history** (the chevron, or a click on a dormant project's row):
 - **Header:** "69 sessions", with ⋯ revealing Rename, Re-import and Delete in place.
@@ -126,7 +126,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 **Herdr calls:**
 - **Live data:** `spaces`, `panes`, `agents`, `terminals`, `machines`, `layout`, `focused`, `window`, `settings`, `theme`, `keys`.
 - **State:** `shared`/`setShared` (view per machine, shown machine, projects, open histories, time-of-day mode, selected note).
-- **Running things:** `exec` (with `on` for remote machines, and `timeout` up to 600000 for git), `readTextFile`, `watchFolder`, `openOverlay`/`closeOverlay`, `notify`, `knownAgents`, `pickFolder`, `nextCommand`, `setAgentOrder`, `appHome`.
+- **Running things:** `exec` (with `on` for remote machines, and `timeout` up to 600000 for git), `readTextFile`, `watchFolder`, `openOverlay`/`closeOverlay`, `notify`, `knownAgents`, `nextCommand`, `setAgentOrder`, `appHome`.
 - **Commands it runs:** `space.new`, `space.select`, `space.move`, `space.rename`, `tab.new`, `tab.select`, `tab.close`, `tab.move`, `tab.rename`, `pane.focus`, `layout.select`, `layout.show`, `layout.hide`, `window.minimize`, `window.maximize` and `window.close`.
 - **Commands it answers** (`sanguo.*`): `new-session`, `new-project`, `field`, `notes`, `changes`, `switch-machine`, `session-N`, `space-N`, `space-next`, `space-prev`, `appearance-auto/light/dark`, `open-in-*`, `open-terminal`.
 

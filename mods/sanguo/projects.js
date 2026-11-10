@@ -99,6 +99,13 @@ export async function listFolders(path, machine) {
   return { at, folders: lines.map((line) => ({ git: line[0] === "1", name: line.slice(2) })) };
 }
 
+// A new folder in `parent`, on that machine: its full path, or an error that says why not.
+export async function makeFolder(parent, name, machine) {
+  const r = await exec("sh", ["-c", 'cd -- "$1" && mkdir -- "$2" && cd -- "$2" && pwd', "sh", parent, name], { on: machine });
+  if (r.code === 0) return r.stdout.trim();
+  throw new Error(/exists/i.test(r.stderr) ? `${name} is already there.` : r.stderr.trim().replace(/^mkdir: /, "") || `Couldn't make it on ${machineLabel(machine)}.`);
+}
+
 // Can a session start in this project now? Throws saying why not.
 export async function checkProject(project) {
   const machine = project.machine ?? null;
