@@ -42,7 +42,7 @@ By hand, into your Herdr home (`~/.config/herdr-app`):
 
 ## Requirements
 
-- **Herdr** with mods. The layout starts from Herdr's `main` layout, version 0.1.12.
+- **Herdr** 0.1.15 or newer, with mods. The layout starts from Herdr's `main` layout, version 0.1.12.
 - **macOS** for the full look. The brush fonts (Baoli SC, Hannotate SC), Finder, Terminal and the "Open in" app icons are macOS. Elsewhere it runs with fallback fonts and fewer "Open in" choices.
 - **Optional:** the coding CLIs you use (Claude Code, Codex, OpenCode, Antigravity), `git` for Changes, and `sqlite3` to read Codex, OpenCode and Antigravity history.
 

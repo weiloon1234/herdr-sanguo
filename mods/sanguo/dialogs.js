@@ -8,6 +8,7 @@ import { currentMachine, machineLabel, machineNames } from "./machines.js";
 import { FolderBrowser } from "./folder-browser.js";
 import { TOOLS, readProjectSessions, tabFinder } from "./session-log.js";
 import { SESSION_ROW_H, resumeSession, sessionRow } from "./session-history.js";
+import { KeepInView } from "./keep-in-view.js";
 import { DIALOG_WIDTH, KNOWN_AGENTS, checkProject, startSession, renameProject, forgetProject, pickableProjects, liveSpaceOf, resolveFolder, saveProject, rememberTool, projectId, openNewProject, openNewSession } from "./projects.js";
 
 const CHECKED = "sanguo.agents-checked"; // machine -> when its agents were last asked for.
@@ -52,6 +53,7 @@ export class NewSession {
     this.projectId = start?.id;
     this.toolKey = null; // Until picked: the project's last, else the first installed.
     this.listOpen = false;
+    this.rowsInView = new KeepInView(); // The highlighted project, as ↑↓ move past the list's seven rows.
     this.tools = {};
     this.history = [];
     this.historyAsked = 0;
@@ -175,6 +177,7 @@ export class NewSession {
     if (this.listOpen) { this.closeList(cx); return; }
     this.search.set_value("");
     this.listOpen = true; this.highlight = this.projectId;
+    this.rowsInView.forget();
     cx.timer.after(40, () => this.search.focus());
     cx.notify();
   }
@@ -270,16 +273,21 @@ export class NewSession {
     const groups = machineNames().map((m) => [m, all.filter((p) => (p.machine ?? null) === m)]).filter(([, list]) => list.length);
     const headed = groups.length > 1 || machineNames().length > 1;
     const rows = all.length * ROW_H + (headed ? groups.length * GROUP_H : 0);
+    // The list's rows in order: each machine's name, when they're headed, then its projects.
+    const entries = groups.flatMap(([m, list]) => [...(headed ? [{ heading: m }] : []), ...list]);
+    this.rowsInView.follow(this.highlight, entries.findIndex((entry) => entry.id === this.highlight));
     return v_flex().id("project-list").w(LIST_W).mt(4).p(LIST_PAD).rounded(8).border(1).border_color(t.input).bg(t.background).shadow_lg()
       .on_mouse_down_out((_e, cx) => this.closeList(cx))
+      // The search in here holds the keyboard, and a key pressed in a popup never reaches the dialog's
+      // own handler, so ↑↓ are caught here. Enter comes through the search's submit.
+      .on_key_down((e, cx) => { if (e.key === "up" || e.key === "down") this.key(e, cx); })
       .child(h_flex().h(SEARCH_H).flex_none().px(8).mb(4).gap(8).items_center().border_b(1).border_color(t.border)
         .child(searchIcon(t)).child(Input.new(this.search).flex_1().min_w(0).text_size(12.5).text_color(t.foreground)))
-      .child(v_flex().id("project-rows").h(Math.max(ROW_H, Math.min(LIST_ROWS_MAX, rows))).flex_none().overflow_y_scrollbar()
+      .child(v_flex().id("project-rows").h(Math.max(ROW_H, Math.min(LIST_ROWS_MAX, rows))).flex_none().overflow_y_scrollbar().track_scroll(this.rowsInView.handle)
         .when(!all.length, (el) => el.child(div().h(ROW_H).flex_none().px(8).flex().items_center().text_size(12).text_color(t.dim).child(`No project matches “${query}”`)))
-        .children(groups.flatMap(([m, list]) => [
-          ...(headed ? [div().h(GROUP_H).flex_none().px(8).flex().items_center().text_size(11).text_color(t.dim).child(machineLabel(m))] : []),
-          ...list.map((p) => this.projectRow(p, t)),
-        ])))
+        .children(entries.map((entry) => ("heading" in entry
+          ? div().h(GROUP_H).flex_none().px(8).flex().items_center().text_size(11).text_color(t.dim).child(machineLabel(entry.heading))
+          : this.projectRow(entry, t)))))
       .child(div().h(1).flex_none().my(4).bg(t.border))
       .child(h_flex().id("pick-new").h(ROW_H).flex_none().px(8).gap(10).items_center().rounded(6).text_size(12.5).text_color(t.muted).cursor_pointer().hover((s) => s.bg(t.hover))
         .on_click(() => { const machine = this.selected()?.machine ?? null; closeOverlay(props().overlay); openNewProject({ machine }); })

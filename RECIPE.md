@@ -18,7 +18,7 @@ Left to right:
     - **Beside a session, Changes or Notes:** a 校场 card (a gate thumbnail, the machine, "4 projects · 4 sessions", ⌘E), then one card per session, described below.
   - **Footer**, 69px: Settings and Add machine.
 - **Work area**:
-  - **Tab bar**, 42px: `校场` (or `× 回校场` away from it), then one tab per session on the machine, numbered 1..n, each 150 to 230px with the CLI's mark, number, project and status word. After the last tab sits `+` (New session); when the tabs overflow they scroll sideways and `+` stays at the far right. On the right: Terminal, Files, Changes and Notes buttons.
+  - **Tab bar**, 42px: `校场` (or `× 回校场` away from it), then one tab per session on the machine, numbered 1..n, each 150 to 230px with the CLI's mark, number, project and status word. After the last tab sits `+` (New session); when the tabs overflow they scroll sideways, the open tab scrolls into view, and `+` stays at the far right. On the right: Terminal, Files, Changes and Notes buttons.
   - **Center**, a stack of four blocks with 10px radius, one shown at a time:
     - **校场 (field):** a painted camp (palisade, watchtowers, a gate named 军门 with two guards) at day or night. A hanging sign shows `校场`, the machine and the counts. Each session is a station: its kingdom's banner, its soldier, and a parchment bubble (236px wide) with the mark, number, project, status word and session title. A blocked session shows what it's asking instead of the title. Flags on the wall show which kingdoms are serving, and props fill the corners (horse, hay, barrels, brazier, weapon rack, a chicken). A pill at the top right picks Auto, Light or Dark.
     - **Session:** the terminal panes, each with a 30px header.
@@ -62,7 +62,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 - **Tab names:** a session's tab takes its session's title as its name and follows it, so Herdr's own alerts say which session ("Claude Code finished · web-app / Fix the login redirect" rather than "/ 1"). A name you give a tab yourself is kept, and when the CLI exits the tab goes back to its number. Only the window that named a tab keeps it up to date; other windows leave it alone.
 
 **New session** (⌘T, the tab bar's `+`, the sidebar's `+`, a project's `+`): a 540px dialog.
-- **Project:** a dropdown with a search box (name, folder or machine; ↑↓ and Enter), 7 rows at most, grouped by machine, with "New project…" at the bottom. It starts on the project of the session in front.
+- **Project:** a dropdown with a search box (name, folder or machine; ↑↓ and Enter), 7 rows at most (the highlighted one scrolls into view), grouped by machine, with "New project…" at the bottom. It starts on the project of the session in front.
 - **Tool:** chips for the CLIs installed on that machine, plus Terminal.
 - **Resume a session:** if the project has history, a searchable list of its past sessions underneath. A click goes to it if open, or resumes it.
 
@@ -82,7 +82,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 
 Escape leaves the message box, then closes Changes.
 
-**Notes** (⌘J or the Notes button): fills the center. Browser-style tabs, each named by its note's first line, with `+` for a new one. Notes:
+**Notes** (⌘J or the Notes button): fills the center. Browser-style tabs, each named by its note's first line, with `+` for a new one; the open one scrolls into view. Notes:
 - **General or project:** opened over a session (or its Changes), Notes starts on that session's project, and a `[General | Project]` switcher in its header flips between the project's notes and the machine's general ones. Opened from the 校场, it shows the general notes alone, with no switcher. The session's card stays highlighted while its project's notes are open.
 - **Saving:** 0.6s after you stop typing, and every 4s while you type.
 - **Where:** they belong to the machine shown. Every window connected to that machine sees the same notes, and another window's edits arrive within 3s (20s while Herdr is behind).
@@ -97,7 +97,7 @@ Escape leaves the text, then closes Notes.
 
 ## Built from
 
-**Layout** `layouts/sanguo.json`, from Herdr's `main` 0.1.12. Each block's content is `{ "mod": "sanguo", "props": { "role": "…" } }`; ids:
+**Layout** `layouts/sanguo.json`, from Herdr's `main` 0.1.12. The mod needs Herdr 0.1.15 or newer (`ScrollHandle`). Each block's content is `{ "mod": "sanguo", "props": { "role": "…" } }`; ids:
 
 - `root` row: canvas background, `terminal_padding [14,12]`, `preview: layouts/sanguo.png`.
   - `sidebar` column, 268px:
@@ -120,7 +120,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 **Mod** `mods/sanguo/`, by file:
 - **Views:** `field.js` (校场), `camp.js` (session cards), `spaces.js` (project list), `tabs.js` with `tab-strip.js` (shared browser-tab chips), `status.js` (status bar and command handler), `changes*.js` (the git view), `notes.js` (Notes), `files.js` (side panel), `dialogs.js`, `chrome.js`, `pane.js`.
 - **Data:** `projects.js`, `machine-store.js` with `machine-store.sh` (per-machine log), `session-log.js`, `session-history.js` with `session-history.sh` (CLI history), `notes-store.js` with `notes.sh`, `git.js`, `machine-script.js` (runs the mod's scripts on any machine).
-- **Shared helpers:** `machines.js`, `views.js` (which center view, per machine), `kingdoms.js`, `actors.js`, `time-of-day.js`, `key-hints.js`.
+- **Shared helpers:** `machines.js`, `views.js` (which center view, per machine), `kingdoms.js`, `actors.js`, `time-of-day.js`, `key-hints.js`, `keep-in-view.js` (keeps the open tab or highlighted row scrolled into view).
 
 **Shipped mods it uses:** `menu` (tab right-click) and `new-menu` (right-click on `+`), plus icons from `workspace-chrome`, `files`, `pane`, `changes` and `tabs`.
 
@@ -155,6 +155,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 - **A cx goes stale across an `await`.** Keep the `cx` from `init` or a task for async work.
 - **`v_virtual_list` rows can't have handlers.** The Changes file list became a plain scroll list for that reason.
 - **Scrolling lists paint over a `Popup`.** A scrolling list drawn after a popup covers it, so New Session swaps its Resume list for a same-height spacer while the project dropdown is open.
+- **Keys pressed in a `Popup` stay in it.** A key pressed in an input inside a popup's content never reaches the dialog's `on_key_down`, so New Session's ↑↓ are caught on the dropdown itself (Enter arrives through the search's `submit`).
 - **`overflow_x_scrollbar` fills its row; `overflow_x_scroll` doesn't.** Use the latter so `+` can sit right after the last tab.
 - **`flex_shrink()` needs a number.**
 - **`window()` is null during `init` on a fresh start.** Read it in `render`.

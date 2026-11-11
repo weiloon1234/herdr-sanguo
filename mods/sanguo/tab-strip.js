@@ -15,7 +15,9 @@ export const tabChip = (id, open, t) => h_flex().id(id).h(29).min_w(TAB_MIN).max
 export const tabClose = (id, tip, onPress, t) => div().id(id).flex_none().tooltip(tip).text_color(t.dim).on_mouse_down("left", stop)
   .on_click((e, cx) => { cx.stop_propagation(); onPress(e, cx); }).child(svg("mods/pane/close.svg").size(12));
 
-export const tabRow = (id, tabs) => h_flex().id(id).flex_shrink(1).min_w(0).h_full().items_center().gap(4).overflow_x_scroll().children(tabs);
+// `inView` (keep-in-view.js) keeps the open tab in sight, also when the row narrows with the window.
+export const tabRow = (id, tabs, inView) => h_flex().id(id).flex_shrink(1).min_w(0).h_full().items_center().gap(4).overflow_x_scroll()
+  .track_scroll(inView.handle).on_size_change((_size, cx) => { inView.reveal(); cx.notify(); }).children(tabs);
 
 // A small square button on a bar: the + after the tabs, and the window's own buttons.
 export const barButton = (id, label, onPress, t) => div().id(id).size(26).flex_none().flex().items_center().justify_center().rounded(6).text_color(t.dim)

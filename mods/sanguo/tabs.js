@@ -9,6 +9,7 @@ import { closeSession, sessionTitle } from "./sessions.js";
 import { keyHint } from "./key-hints.js";
 import { barButton, tabChip, tabClose, tabRow } from "./tab-strip.js";
 import { openOutsideTerminal } from "./terminal.js";
+import { KeepInView } from "./keep-in-view.js";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -22,7 +23,8 @@ function find(node, id) {
 export default class Tabs {
   init() {
     this.pressed = null;
-    this.panels = JSON.parse(localStorage.getItem("panels") ?? "{}");
+    this.inView = new KeepInView();
+    this.panels =JSON.parse(localStorage.getItem("panels") ?? "{}");
   }
 
   // The side panel is remembered per space: switching shows that space's choice
@@ -60,8 +62,11 @@ export default class Tabs {
     const stop = (_e, cx) => cx.stop_propagation();
     const button = (id, label, action) => barButton(id, label, action, t);
     const onField = showingField(), changesOn = showingChanges(), notesOn = showingNotes(), allPanes = panes(), numbers = sessionNumbers(currentMachine());
-    const item = ({ tab: c, space: project }) => {
-      const open = c.active && project.active && !onField && !changesOn && !notesOn, title = sessionTitle(c);
+    const isOpen = ({ tab: c, space: project }) => c.active && project.active && !onField && !changesOn && !notesOn;
+    const openAt = shown.findIndex(isOpen);
+    this.inView.follow(shown[openAt]?.tab.id ?? null, openAt);
+    const item = (session) => {
+      const { tab: c, space: project } = session, open = isOpen(session), title = sessionTitle(c);
       const here = allPanes.filter(p => p.tab === c.id), fighters = here.filter(isFighter);
       const program = fighters[0]?.program ?? here[0]?.program;
       const banners = uniqueMarks(fighters);
@@ -108,7 +113,7 @@ export default class Tabs {
         .bg(onField ? t.selected : t.chrome).text_color(onField ? t.foreground : t.muted).hover(s => s.bg(t.hover)).on_mouse_down("left", stop)
         .tooltip(onField ? "Every session on this machine" : keyHint("sanguo.field", "Back to the 校场. The session keeps running."))
         .on_click(() => backToField()).child(onField ? "校场" : "× 回校场"))
-      .child(tabRow("tab-scroll", shown.map(item)))
+      .child(tabRow("tab-scroll", shown.map(item), this.inView))
       .child(button("tab-new", "+", () => openNewSession({ machine: currentMachine() })).flex_none().tooltip(keyHint("sanguo.new-session", "New session. Right-click for Herdr's menu."))
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "new-menu", kind: "popup", width: 250, height: 512 }); }))
       .child(div().flex_1().min_w(0).h_full())

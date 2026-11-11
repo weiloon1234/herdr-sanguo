@@ -13,6 +13,7 @@ import { GENERAL, closeNote, dropNote, listNotes, newNoteId, noteTitle, projectS
 import { icon, iconButton, spinner } from "./changes-ui.js";
 import { barButton, tabChip, tabClose, tabRow } from "./tab-strip.js";
 import { keyHint } from "./key-hints.js";
+import { KeepInView } from "./keep-in-view.js";
 
 const TICK_MS = 400;
 const SAVE_PAUSE_MS = 600, SAVE_EVERY_MS = 4000; // After a pause in typing, and at least this often during it.
@@ -40,6 +41,7 @@ export default class Notes {
     this.cx = cx; // Lasts as long as this build of the mod.
     this.books = new Map();
     this.handle = cx.focus_handle();
+    this.tabsInView = new KeepInView();
     this.typing = false;
     this.shownOn = null; // The machine whose notes are on screen, while they are.
     this.choice = {}; // Machine -> the scope chosen there, while Notes shows.
@@ -367,6 +369,7 @@ export default class Notes {
           ? tabClose(`note-close-${note.id}`, "Close this note", (_e, cx) => this.closeTab(book, note, cx), t)
           : div().w(12).flex_none().text_color(note.error ? t.blocked : t.dim).child(note.error || waiting ? "•" : ""));
     };
+    if (book.loaded) this.tabsInView.follow(shown?.id ?? null, book.notes.indexOf(shown));
     return h_flex().h(42).flex_none().px(8).gap(3).items_center().bg(t.chrome).border_b(1).border_color(t.border)
       .child(h_flex().flex_none().pl(4).pr(8).gap(6).items_center().text_color(t.muted)
         .child(icon("pen", 14))
@@ -374,7 +377,7 @@ export default class Notes {
         .child(div().px(5).rounded(4).border_1().border_color(t.border).text_size(10.5).text_color(t.muted)
           .tooltip(`Kept on ${machineLabel(book.machine)}, the same in every window connected to it`).child(machineLabel(book.machine))))
       .child(this.switcher(book, t))
-      .when(book.loaded, (el) => el.child(tabRow("note-tabs", book.notes.map(chip)))
+      .when(book.loaded, (el) => el.child(tabRow("note-tabs", book.notes.map(chip), this.tabsInView))
         .child(barButton("note-new", "+", (_e, cx) => this.addNote(cx), t).tooltip("New note")))
       .child(div().flex_1())
       .child(iconButton("notes-close", "x", keyHint("sanguo.notes", "Close notes"), () => closeNotes(), t));
