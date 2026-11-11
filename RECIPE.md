@@ -78,7 +78,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 - **Branch picker:** remote branches can be checked out, merged, pushed or rebased. Local branches can be switched to, merged in either direction, rebased or deleted. The current branch can be renamed.
 - **Sync menu:** fetch, pull (fast-forward or rebase), push, force push with lease after a confirm, and stashes.
 - **History:** the commit list.
-- **Commit message:** a ✨ button writes one with Claude Code (Haiku), Codex or Antigravity on that machine.
+- **Commit message:** a ✨ button writes one with Claude Code (Haiku), Codex or Antigravity on that machine, waiting up to 2 minutes for it.
 
 Escape leaves the message box, then closes Changes.
 
@@ -127,7 +127,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 **Herdr calls:**
 - **Live data:** `spaces`, `panes`, `agents`, `terminals`, `machines`, `layout`, `focused`, `window`, `settings`, `theme`, `keys`.
 - **State:** `shared`/`setShared` (view per machine, shown machine, projects, open histories, time-of-day mode, selected note).
-- **Running things:** `exec` (with `on` for remote machines, and `timeout` up to 600000 for git), `readTextFile`, `watchFolder`, `openOverlay`/`closeOverlay`, `notify`, `knownAgents`, `nextCommand`, `setAgentOrder`, `appHome`.
+- **Running things:** `exec` (with `on` for remote machines, and `timeout`: 600000 for git's long commands, 120000 for ✨), `readTextFile`, `watchFolder`, `openOverlay`/`closeOverlay`, `notify`, `knownAgents`, `nextCommand`, `setAgentOrder`, `appHome`.
 - **Commands it runs:** `space.new`, `space.select`, `space.move`, `space.rename`, `tab.new`, `tab.select`, `tab.close`, `tab.move`, `tab.rename`, `pane.focus`, `layout.select`, `layout.show`, `layout.hide`, `window.minimize`, `window.maximize` and `window.close`.
 - **Commands it answers** (`sanguo.*`): `new-session`, `new-project`, `field`, `notes`, `changes`, `switch-machine`, `session-N`, `space-N`, `space-next`, `space-prev`, `appearance-auto/light/dark`, `open-in-*`, `open-terminal`.
 
@@ -159,6 +159,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 - **`overflow_x_scrollbar` fills its row; `overflow_x_scroll` doesn't.** Use the latter so `+` can sit right after the last tab.
 - **`flex_shrink()` needs a number.**
 - **`window()` is null during `init` on a fresh start.** Read it in `render`.
+- **`exec` gives up after 30 seconds** unless given a `timeout`. Anything slower needs one (git's long commands, ✨), and a script with its own limit keeps it under that one, so it can still say why it stopped.
 
 **Remote machines:**
 - **Leftovers get killed.** On a remote machine, whatever a command leaves running is killed when the command returns, so long git commands run in the foreground with a long `timeout`, never detached.

@@ -1,10 +1,11 @@
 #!/bin/sh
 # Writes a commit message for what's staged or, with nothing staged, for everything changed. It runs
 # on the project's machine: the app sends this text there, so it stands alone.
-#   commit-message.sh <claude|codex|agy> <repo root>
+#   commit-message.sh <claude|codex|agy> <repo root> <seconds to wait>
 # Prints the CLI's answer. The CLI runs in an empty folder, in its most restricted mode: the diff could
 # say anything, so it can't touch the repo, and its session isn't one of the project's.
 tool=$1
+limit=${3:?seconds to wait}
 cd "$2" || exit 2
 work=$(mktemp -d "${TMPDIR:-/tmp}/sanguo-commit.XXXXXX") || exit 1
 trap 'rm -rf "$work"' EXIT
@@ -46,17 +47,24 @@ case "$tool" in
   *) echo "Unknown CLI: $tool" >&2; exit 2 ;;
 esac
 
-# The app can only wait 30 seconds for this.
+# The app stops waiting a little after the limit, so the CLI is stopped at it and this can say so.
 "$@" < "$work/prompt" > "$work/out" 2> "$work/err" &
 running=$!
-checks=0
-while kill -0 "$running" 2>/dev/null; do
-  [ "$checks" -ge 50 ] && kill "$running" 2>/dev/null
-  checks=$((checks + 1))
-  sleep 0.5
-done
-wait "$running" 2>/dev/null
+checks=0 late=
+# Quiet, so the shell's own "Terminated" notice doesn't become part of what it says went wrong.
+{
+  while kill -0 "$running"; do
+    if [ "$checks" -ge $((limit * 2)) ]; then late=1; kill "$running"; fi
+    checks=$((checks + 1))
+    sleep 0.5
+  done
+  wait "$running"
+} 2>/dev/null
 code=$?
+if [ -n "$late" ]; then
+  echo "No answer in $limit seconds." >&2
+  exit 1
+fi
 if [ "$code" -ne 0 ] || [ ! -s "$work/out" ]; then
   tail -5 "$work/err" >&2
   [ "$code" -ne 0 ] && exit "$code"

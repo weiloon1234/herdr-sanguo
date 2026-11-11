@@ -14,6 +14,9 @@ const CHOSEN = "sanguo.commit-writer"; // machine -> the CLI that writes there
 const ORDER = ["claude", "codex", "agy"];
 const LABELS = { claude: "Claude Code (Haiku)" };
 const WIDTH = 240;
+// A CLI can take a minute to answer, longer on another machine. The script stops it a little before
+// this, so it can still say why.
+const WAIT_MS = 120000, STOP_EARLY_S = 10;
 
 const labelOf = (name) => LABELS[name] ?? TOOLS[name].name;
 
@@ -56,7 +59,7 @@ export class CommitWriter {
     cx.spawn(async (cx) => {
       try {
         const script = await readTextFile(`${appHome()}/mods/sanguo/commit-message.sh`);
-        const r = await exec("sh", ["-c", script, "commit-message", tool, repo.cwd], { on: repo.on });
+        const r = await exec("sh", ["-c", script, "commit-message", tool, repo.cwd, String(WAIT_MS / 1000 - STOP_EARLY_S)], { on: repo.on, timeout: WAIT_MS });
         const line = r.code === 0 ? oneLine(r.stdout) : "";
         if (!line) throw new Error((r.stderr || "It didn't answer.").trim());
         this.view.setMessage(line);
