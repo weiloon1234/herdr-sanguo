@@ -9,7 +9,7 @@ Every coding session on a machine becomes a soldier on a painted 校场 (drill g
 ## What's in it
 
 - **The 校场.** Every session on the machine has a station: its kingdom's banner, its soldier acting out the status, and a bubble with the project and the session's title. Day and night art switch on their own (Auto), or pin Light or Dark.
-- **Kingdoms mark the CLI.** Claude Code is 吴 Wu (red, C), Codex is 魏 Wei (blue, X), Antigravity is 蜀 Shu (green, A), and anything else, OpenCode included, is 群 Qun (gold).
+- **Kingdoms mark the CLI.** Claude Code is 吴 Wu (red, C), Codex is 魏 Wei (blue, X), Antigravity is 蜀 Shu (green, A), DeepSeek Harness is 晋 Jin (white and cobalt, D), and anything else, OpenCode included, is 群 Qun (gold).
 - **Browser-style session tabs**, numbered 1 to n, with `+` right after the last one. Each tab takes its session's title as its name, so Herdr's own alerts say which session finished or needs you. Beside an open session, the sidebar shows a card per session: title first, then project, then status and its ⌘ key.
 - **Projects and their history.** Each project lists its past sessions from the CLIs' own records, one line each. A click jumps to an open session or resumes a closed one.
 - **New Project** browses folders on any machine and can make a new folder right there, so there's no trip to Finder.
@@ -45,7 +45,7 @@ By hand, into your Herdr home (`~/.config/herdr-app`):
 
 - **Herdr** 0.1.15 or newer, with mods. The layout starts from Herdr's `main` layout, version 0.1.12.
 - **macOS** for the full look. The brush fonts (Baoli SC, Hannotate SC), Finder, Terminal and the "Open in" app icons are macOS. Elsewhere it runs with fallback fonts and fewer "Open in" choices.
-- **Optional:** the coding CLIs you use (Claude Code, Codex, OpenCode, Antigravity), `git` for Changes, and `sqlite3` to read Codex, OpenCode and Antigravity history.
+- **Optional:** the coding CLIs you use (Claude Code, Codex, OpenCode, Antigravity, DeepSeek Harness's `dsh-tui`), `git` for Changes, and `sqlite3` to read Codex, OpenCode and Antigravity history.
 
 ## Keys
 

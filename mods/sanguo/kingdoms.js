@@ -11,6 +11,8 @@ export const KINGDOMS = {
   wu: { id: "wu", mark: "C", color: "#d9613f", match: /claude/ },
   wei: { id: "wei", mark: "X", color: "#5b8fc7", match: /codex/ }, // Not C: that's Claude's.
   shu: { id: "shu", mark: "A", color: "#5fa777", match: /agy|antigravity/ },
+  // White and cobalt, like blue-and-white porcelain (Wei is the blue one), so its mark is inked in cobalt.
+  jin: { id: "jin", mark: "D", color: "#e4e7ee", ink: { day: "#1336c5", night: "#162da2" }, match: /dsh|deepseek/ },
   qun: { id: "qun", color: "#c29f55", match: /$^/ }, // Everything else: OpenCode, pi... Marked by name.
 };
 
@@ -62,8 +64,9 @@ export function softMark(holder, color, scale) {
 const CHIP_SIZE = 15;
 
 export function kingdomChip(holder) {
+  const k = kingdomOf(holder);
   return div().size(CHIP_SIZE).flex_none().flex().items_center().justify_center().rounded(2)
-    .bg(kingdomOf(holder).color).child(markGlyph(holder, "#fff8e8"));
+    .bg(k.color).child(markGlyph(holder, k.ink?.day ?? "#fff8e8"));
 }
 
 // The status as a word; only what needs you moves.

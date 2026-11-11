@@ -34,7 +34,7 @@ Left to right:
 
 The open session's card has its kingdom's color as border; a blocked one, the blocked color.
 
-**Kingdoms** mark which CLI a session runs: Claude Code is 吴 Wu (red `#d9613f`, mark C), Codex is 魏 Wei (blue `#5b8fc7`, X), Antigravity is 蜀 Shu (green `#5fa777`, A), anything else (OpenCode, pi…) is 群 Qun (gold `#c29f55`, its first letter). A plain shell is an unmarked recruit.
+**Kingdoms** mark which CLI a session runs: Claude Code is 吴 Wu (red `#d9613f`, mark C), Codex is 魏 Wei (blue `#5b8fc7`, X), Antigravity is 蜀 Shu (green `#5fa777`, A), DeepSeek Harness (`dsh-tui`) is 晋 Jin (white and cobalt like blue-and-white porcelain: chip `#e4e7ee` with a cobalt `#1336c5` D, and a whale-tail crest on its helmet), anything else (OpenCode, pi…) is 群 Qun (gold `#c29f55`, its first letter). A plain shell is an unmarked recruit. A mark is cream on its color, except Jin's, which is cobalt on white.
 
 ## How it behaves
 
@@ -63,7 +63,7 @@ Guards stand at attention by day and nap by night. Motion stops when Herdr isn't
 
 **New session** (⌘T, the tab bar's `+`, the sidebar's `+`, a project's `+`): a 540px dialog.
 - **Project:** a dropdown with a search box (name, folder or machine; ↑↓ and Enter), 7 rows at most (the highlighted one scrolls into view), grouped by machine, with "New project…" at the bottom. It starts on the project of the session in front.
-- **Tool:** chips for the CLIs installed on that machine, plus Terminal.
+- **Tool:** chips for the CLIs Herdr finds installed on that machine (asked again after 10 minutes), each in its kingdom's color, plus Terminal. DeepSeek Harness shows once `dsh-tui` is on the PATH there.
 - **Resume a session:** if the project has history, a searchable list of its past sessions underneath. A click goes to it if open, or resumes it.
 
 **New project** (⌘N, the folder-plus): a folder (typed, or picked with Browse) and a name. Browse lists the folders on the chosen machine, this one or a remote one, and its folder-plus button makes a new folder where you are, then opens it. A name already there, or one with `/`, is refused inline. Next saves it and goes on to New Session.
@@ -150,7 +150,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 
 **Network:** only through git (fetch, pull, push) and the CLIs ✨ runs.
 
-**Art:** `art/paint/` holds painted PNGs at 2× (backdrop, gate, guards, banners and tents per kingdom; soldiers per kingdom in awake/drill/kneel/cheer/rest poses; dummy, drum, table, crops, hoe, sparks, dust and corner props), with `art/paint/night/` variants. `art/paint/sizes.js` gives each piece's display size. `art/marks/` and `art/marks-soft/` hold the A–Z letter marks. Fonts are Baoli SC (brush) and Hannotate SC (status words), which ship with macOS.
+**Art:** `art/paint/` holds painted PNGs at 2× (backdrop, gate, guards, banners and tents per kingdom; soldiers per kingdom in awake/drill/kneel/cheer/rest poses; dummy, drum, table, crops, hoe, sparks, dust and corner props), with `art/paint/night/` variants. `art/paint/sizes.js` gives each piece's display size. A kingdom is 13 day pictures: `banner-<id>`, `tent-<id>` and its soldier's `awake`, `rest`, `drill-1..3`, `kneel-1..3`, `cheer-1..3`, each pose's frames on one shared canvas, feet on its bottom edge with 5px to spare. The rest is made from them: `night/` is the day art through one color matrix (R′ = .5922R + .0909G + .0169B + 2.5, G′ = .0488R + .6733G + .0179B + 4.5, B′ = .0594R + .1168G + .7238B + 11.5, alpha kept), and `mini/` is the soldier frames at 0.3× (with their own night copies). `art/marks/` and `art/marks-soft/` hold the A–Z letter marks. Fonts are Baoli SC (brush) and Hannotate SC (status words), which ship with macOS.
 
 ## Watch out
 
@@ -175,6 +175,10 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 - **Skip what this window wrote mid-check.** A background re-read must ignore notes this window wrote after the read began, or it brings back old text.
 - **Change the mod folder in one go.** Every saved file reloads the mod in a running window, so files saved one at a time load a mix of old and new. Before Herdr 0.1.14 each reload also leaked memory and about 25 ended in "out of memory"; on 0.1.15, 60 reloads in a row left memory flat.
 - **Start Herdr with a clean environment.** Started from inside a Claude Code shell, Herdr passes `CLAUDECODE` to its terminals, and Claude sessions there silently stop saving.
+
+**Art:**
+- **Repaint a kingdom, don't draw one fresh.** A soldier drawn from a prompt comes out taller and slimmer than the others, and its frames don't line up. Jin was made by asking gpt-image to repaint Wei's frames: pose, size and framing stay, so the frames stack like everyone else's.
+- **gpt-image's transparency isn't quite.** Its "transparent" figures are 98–99% opaque, with stray specks around them; push alpha above 95% to solid and drop the specks, or ask for a flat green background and key it out.
 
 **Assumptions:**
 - **macOS.** Fonts, Finder, Terminal, `open` and `osascript` are macOS; elsewhere the fonts fall back and Open in has less to offer.

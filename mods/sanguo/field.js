@@ -95,14 +95,15 @@ function timePill() {
         .on_click(() => setTimeOfDayMode(mode)).child(label))));
 }
 
-// A kingdom's banner, its mark centered on the plain cloth.
+// A kingdom's banner, its mark centered on the plain cloth: in its own ink if it has one, dark on Qun's gold, light on the rest.
 function banner(holder, x, foot, s) {
-  const id = kingdomOf(holder).id, name = `banner-${id}`, [w, h] = PAINT[name];
+  const k = kingdomOf(holder), name = `banner-${k.id}`, [w, h] = PAINT[name];
+  const ink = k.ink ? k.ink[isNight() ? "night" : "day"] : k.id === "qun" ? c.ink : c.light;
   const left = Math.round(x * s), top = Math.round((foot - h) * s), W = Math.round(w * s), H = Math.round(h * s);
   return [
     pic(name, left, top, s),
     div().absolute().left(left).top(top + Math.round(H * 0.125)).w(W).h(Math.round(H * 0.385)).flex().items_center().justify_center()
-      .child(softMark(holder, id === "qun" ? c.ink : c.light, Math.max(2, Math.round(3 * s)))),
+      .child(softMark(holder, ink, Math.max(2, Math.round(3 * s)))),
   ];
 }
 
