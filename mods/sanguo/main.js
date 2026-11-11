@@ -12,15 +12,19 @@ import Notes from "./notes.js";
 import Status from "./status.js";
 import Pane from "./pane.js";
 import Chrome from "./chrome.js";
+import Toast from "./toast.js";
 import { NewSession, NewProject, RenameProject, DeleteProject, CloseSession } from "./dialogs.js";
 
-const ROLES = { field: Field, camp: Camp, spaces: Spaces, tabs: Tabs, files: Files, changes: Changes, notes: Notes, status: Status, pane: Pane, chrome: Chrome, "new-session": NewSession, "new-project": NewProject, "rename-project": RenameProject, "delete-project": DeleteProject, "close-session": CloseSession };
+const ROLES = { field: Field, camp: Camp, spaces: Spaces, tabs: Tabs, files: Files, changes: Changes, notes: Notes, status: Status, pane: Pane, chrome: Chrome, toast: Toast, "new-session": NewSession, "new-project": NewProject, "rename-project": RenameProject, "delete-project": DeleteProject, "close-session": CloseSession };
 const DEFAULT_ROLE = "field";
+
+// Herdr gives its own props to a pane's header, which name the pane, and to a notification, which
+// has a title. Every other copy is told its role.
+const roleOf = (p) => p?.role ?? (p?.pane ? "pane" : p?.title !== undefined ? "toast" : DEFAULT_ROLE);
 
 export default class Sanguo extends View {
   init(_props, cx) {
-    // A pane's header gets its props from Herdr, which name the pane.
-    this.role = new ROLES[props()?.role ?? (props()?.pane ? "pane" : DEFAULT_ROLE)]();
+    this.role = new ROLES[roleOf(props())]();
     this.role.init?.(props(), cx);
   }
 

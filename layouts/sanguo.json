@@ -237,5 +237,6 @@
     12,
     16
   ],
-  "preview": "layouts/sanguo.png"
+  "preview": "layouts/sanguo.png",
+  "toast": "sanguo"
 }

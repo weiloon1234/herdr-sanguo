@@ -15,9 +15,11 @@ import { keyHint } from "./key-hints.js";
 import { DAWN, DUSK, MODES, isNight, modeNow, setTimeOfDayMode } from "./time-of-day.js";
 import { PAINT, BACKDROP } from "./art/paint/sizes.js";
 
-const HOVER = "#c8922e", ALERT = "#f2b441";
+export const HOVER = "#c8922e", ALERT = "#f2b441";
 const DAY = { floor: "#d9a766", ink: "#3a2314", paper: "#fbf3df", sticker: "#f6ead2", muted: "#7a6549", light: "#fff8e8", plaque: "#6e2616", onGround: "#3a2314" };
 const NIGHT = { floor: "#2f2836", ink: "#241c22", paper: "#d9d6cf", sticker: "#bfc0c4", muted: "#5d5248", light: "#e3e6f0", plaque: "#2b1a22", onGround: "#e6e3da" };
+// The 校场's colors at this hour: its bubbles' paper and ink, which the notifications share.
+export const fieldColors = () => (isNight() ? NIGHT : DAY);
 let c = DAY; // Set at the top of each render.
 
 // Where the painted backdrop's parts are, in its own pixels.
@@ -258,7 +260,7 @@ export default class Field {
   }
 
   render(cx) {
-    c = isNight() ? NIGHT : DAY;
+    c = fieldColors();
     const machine = currentMachine(), sessions = sessionFacts(machine);
     // Holds the keyboard while shown, so typing never lands in a hidden terminal.
     if (showingField() && !this.holding) { this.holding = true; cx.spawn(async () => this.handle.focus()); }

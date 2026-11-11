@@ -93,13 +93,17 @@ Escape leaves the text, then closes Notes.
 
 **Open in** (status bar): opens the session's folder in Finder or an installed editor. On a remote machine, only VS Code-family editors through `vscode://vscode-remote/ssh-remote+…`.
 
+**Notifications** (Herdr's own and the mod's, 340×72 in the corner, sized by Herdr): the 校场's paper and ink, by day or night, with a 3px paper ring and a 2px ink border that turns `#c8922e` on hover.
+- **About a session** (an agent that finished or needs you, found from the terminal, pane or tab its action goes to): that session's yard thumbnail with its soldier acting out its status, then its kingdom's mark, the notification's title and the status word; the project and session title with its ⌘ key; and, when blocked, what it asks. Done and blocked ones take their status ink as border; a blocked one's ring is `#f2b441`. A click opens the session, then runs the notification's action.
+- **Anything else:** a 34px seal in brush type for its level: 报 info (the 校场 sign's lacquer), 捷 success, 警 warning (`#a8641c`), 急 error, or its icon when it has one. Then the title and the first line of its text (all of it on hover). A machine that needs a login names the command, with Copy.
+
 **Keys** (`keys.json`, section `layout:sanguo`): ⌘T new session, ⌘N new project, ⌘E 校场, ⌘J notes, ⌘` next machine, ⌘1..⌘0 sessions, ⌃1..⌃9 projects, ⌘⌥[ ⌘⌥] previous or next project.
 
 ## Built from
 
 **Layout** `layouts/sanguo.json`, from Herdr's `main` 0.1.12. The mod needs Herdr 0.1.15 or newer (`ScrollHandle`). Each block's content is `{ "mod": "sanguo", "props": { "role": "…" } }`; ids:
 
-- `root` row: canvas background, `terminal_padding [14,12]`, `preview: layouts/sanguo.png`.
+- `root` row: canvas background, `terminal_padding [14,12]`, `preview: layouts/sanguo.png`, `"toast": "sanguo"` (this mod draws the notifications).
   - `sidebar` column, 268px:
     - `brand` (46px): role `chrome`.
     - `sidebar-lists`: `spaces` (role `spaces`, weight 1, min 90) and `agents` (role `camp`, weight 1, min 90). The mod shows one and hides the other.
@@ -115,10 +119,10 @@ Escape leaves the text, then closes Notes.
       - `panel` (368px, hidden): `panel-body` stack with `files` (role `files`).
     - `status` (28px): role `status`.
 
-Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `rename-project`, `delete-project` and `close-session`. `main.js` picks the role class from `props().role`.
+Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `rename-project`, `delete-project` and `close-session`. `main.js` picks the role class from `props().role`. Herdr gives its own props to a pane header (they name the pane: role `pane`) and to a notification (they have a title: role `toast`).
 
 **Mod** `mods/sanguo/`, by file:
-- **Views:** `field.js` (校场), `camp.js` (session cards), `spaces.js` (project list), `tabs.js` with `tab-strip.js` (shared browser-tab chips), `status.js` (status bar and command handler), `changes*.js` (the git view), `notes.js` (Notes), `files.js` (side panel), `dialogs.js`, `chrome.js`, `pane.js`.
+- **Views:** `field.js` (校场), `camp.js` (session cards), `spaces.js` (project list), `tabs.js` with `tab-strip.js` (shared browser-tab chips), `status.js` (status bar and command handler), `changes*.js` (the git view), `notes.js` (Notes), `files.js` (side panel), `toast.js` (notifications), `dialogs.js`, `chrome.js`, `pane.js`.
 - **Data:** `projects.js`, `machine-store.js` with `machine-store.sh` (per-machine log), `session-log.js`, `session-history.js` with `session-history.sh` (CLI history), `notes-store.js` with `notes.sh`, `git.js`, `machine-script.js` (runs the mod's scripts on any machine).
 - **Shared helpers:** `machines.js`, `views.js` (which center view, per machine), `kingdoms.js`, `actors.js`, `time-of-day.js`, `key-hints.js`, `keep-in-view.js` (keeps the open tab or highlighted row scrolled into view).
 
@@ -128,7 +132,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 - **Live data:** `spaces`, `panes`, `agents`, `terminals`, `machines`, `layout`, `focused`, `window`, `settings`, `theme`, `keys`.
 - **State:** `shared`/`setShared` (view per machine, shown machine, projects, open histories, time-of-day mode, selected note).
 - **Running things:** `exec` (with `on` for remote machines, and `timeout`: 600000 for git's long commands, 120000 for ✨), `readTextFile`, `watchFolder`, `openOverlay`/`closeOverlay`, `notify`, `knownAgents`, `nextCommand`, `setAgentOrder`, `appHome`.
-- **Commands it runs:** `space.new`, `space.select`, `space.move`, `space.rename`, `tab.new`, `tab.select`, `tab.close`, `tab.move`, `tab.rename`, `pane.focus`, `layout.select`, `layout.show`, `layout.hide`, `window.minimize`, `window.maximize` and `window.close`.
+- **Commands it runs:** `space.new`, `space.select`, `space.move`, `space.rename`, `tab.new`, `tab.select`, `tab.close`, `tab.move`, `tab.rename`, `pane.focus`, `layout.select`, `layout.show`, `layout.hide`, `window.minimize`, `window.maximize` and `window.close`, and a clicked notification's own action (Herdr's agent alerts: `agent.focus`).
 - **Commands it answers** (`sanguo.*`): `new-session`, `new-project`, `field`, `notes`, `changes`, `switch-machine`, `session-N`, `space-N`, `space-next`, `space-prev`, `appearance-auto/light/dark`, `open-in-*`, `open-terminal`.
 
 **Programs it runs, on the machine a project is on:** `sh`, `git`, `sqlite3` (read-only, to read CLI history), `claude`/`codex`/`agy` (only when you press ✨), `open` and `osascript` (Open in, and app icons exported with JXA), `ssh` (Terminal for a remote session).
@@ -181,9 +185,10 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 
 ## Done when
 
-- `herdr-app check mods/sanguo` passes with `DEFAULT_ROLE` set to each role in turn: field, camp, spaces, tabs, files, changes, notes, status, pane, chrome, new-session, new-project, rename-project, delete-project, close-session.
+- `herdr-app check mods/sanguo` passes with `DEFAULT_ROLE` set to each role in turn: field, camp, spaces, tabs, files, changes, notes, status, pane, chrome, toast, new-session, new-project, rename-project, delete-project, close-session.
 - `layout.switch {"name":"sanguo"}` shows the dark camp with the sidebar, tab bar, 校场 and status bar, and `herdr-app status` reports no errors.
 - Start a Claude Code session: a red Wu soldier with a C banner appears, and drills at the dummy while it works. When it finishes it cheers at the drum, and later naps by its tent. A permission prompt makes it kneel by the table with a blinking `!`, and its bubble says what it wants.
+- With Herdr behind another app, that session finishing pops a paper notification in the corner with its soldier and ⌘ key; a click opens the session.
 - ⌘T opens New Session on the project in front; typing in its search filters the projects; a past session in Resume reopens it with its history.
 - ⌘J on the 校场 opens the general notes; text typed there appears in `~/.config/herdr-app/data/sanguo/notes/general/<id>.md` within a second; closing the tab and pressing Undo brings it back.
 - ⌘J over a session opens its project's notes, saved under `notes/project/…`; the switcher's General shows the general notes, not the project's.

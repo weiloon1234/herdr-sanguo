@@ -21,8 +21,8 @@ function stage(content) {
   return div().relative().w(STAGE_W).h(STAGE_H).flex_none().rounded(8).overflow_hidden().children(content);
 }
 
-// A small window onto the yard, with the session's soldier in it.
-function soldierStage(st) {
+// A small window onto the yard, with the session's soldier in it. Notifications about a session show it too.
+export function soldierStage(st) {
   const [w] = PAINT[firstFrame(st.status, st.who, "mini/")], x = Math.max(0, Math.round((STAGE_W - w) / 2));
   return stage([
     on("yard-thumb", 0, STAGE_H, 1),

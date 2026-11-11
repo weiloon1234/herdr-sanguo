@@ -16,6 +16,7 @@ Every coding session on a machine becomes a soldier on a painted 校场 (drill g
 - **New Session**, with a searchable project picker that starts on the project you're in, and a searchable list of that project's sessions to resume.
 - **Changes**, a git view: staging checkboxes, diffs, branches, fetch, pull, push, stashes, history, and ✨ commit messages written by your CLI.
 - **Notes**, a tabbed scratchpad that saves as you type: general notes for the machine, and notes per project. Opened over a session it starts on that project's notes, with a switch to the general ones. Notes belong to a machine, and every window connected to it shows the same ones.
+- **Notifications on the camp's paper.** When an agent finishes or needs you, its soldier pops up in the corner acting it out, with its kingdom's mark and status; a click takes you there. Other notices carry a seal: 报 news, 捷 success, 警 warning, 急 error.
 - **Several machines.** Each machine Herdr connects to has its own camp, projects, history and notes, stored on that machine. Switch with the pills at the top of the sidebar or ⌘`.
 
 ## The statuses

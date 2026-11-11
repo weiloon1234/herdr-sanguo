@@ -10,10 +10,10 @@ Follow the person's Herdr home `AGENTS.md`, section "Layouts and mods other peop
    - it runs programs: `sh`, `git`, `sqlite3`, `open`, `osascript`, `ssh`, and their coding CLIs when they press ✨;
    - it reads the CLIs' session records under `~/.claude`, `~/.codex`, `~/.local/share/opencode` and `~/.gemini`;
    - it writes to `data/sanguo/` in each machine's Herdr home.
-2. **Copy** `layouts/sanguo.json` + `layouts/sanguo.png`, `themes/sanguo.json` and `mods/sanguo/` into their home. Never overwrite: if a name is taken, rename the new one everywhere it's named. That includes the layout's `"mod": "sanguo"` entries, the layout's `"theme"`, and the mod's own `mods/sanguo/` paths in `*.js`.
+2. **Copy** `layouts/sanguo.json` + `layouts/sanguo.png`, `themes/sanguo.json` and `mods/sanguo/` into their home. Never overwrite: if a name is taken, rename the new one everywhere it's named. That includes the layout's `"mod": "sanguo"` entries, its `"toast"`, the layout's `"theme"`, and the mod's own `mods/sanguo/` paths in `*.js`.
 3. **Merge** `keys.json`'s `layout:sanguo` section into theirs, and ask before replacing a key they already use.
 4. **Check every role.** `main.js` picks a role from `props().role` and falls back to `DEFAULT_ROLE`. For each role, set `DEFAULT_ROLE` in a copy of the mod and run `herdr-app check` on that copy:
-   - **Views:** field, camp, spaces, tabs, files, changes, notes, status, pane, chrome.
+   - **Views:** field, camp, spaces, tabs, files, changes, notes, status, pane, chrome, toast.
    - **Dialogs:** new-session, new-project, rename-project, delete-project, close-session.
 5. **Switch** with `layout.switch {"name": "sanguo"}`, and confirm `herdr-app status` shows no errors.
 
