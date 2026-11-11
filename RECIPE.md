@@ -173,7 +173,7 @@ Dialogs are overlays of the same mod with roles `new-session`, `new-project`, `r
 - **Wait for a dialog's writes before closing it.** Closing a dialog ends its code, and a write still on its way is lost.
 - **Only re-read the project list on project lines.** It is rebuilt from the machine log only when project lines arrive, so a session or import line can't drop a project just added.
 - **Skip what this window wrote mid-check.** A background re-read must ignore notes this window wrote after the read began, or it brings back old text.
-- **Mod reloads leak memory.** Each mod reload leaks some, and about 25 reloads end in "out of memory". Swap the mod folder in one go, and restart the window after test batches.
+- **Change the mod folder in one go.** Every saved file reloads the mod in a running window, so files saved one at a time load a mix of old and new. Before Herdr 0.1.14 each reload also leaked memory and about 25 ended in "out of memory"; on 0.1.15, 60 reloads in a row left memory flat.
 - **Start Herdr with a clean environment.** Started from inside a Claude Code shell, Herdr passes `CLAUDECODE` to its terminals, and Claude sessions there silently stop saving.
 
 **Assumptions:**

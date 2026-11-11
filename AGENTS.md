@@ -20,7 +20,7 @@ Follow the person's Herdr home `AGENTS.md`, section "Layouts and mods other peop
 ## Changing it
 
 - **One role per block.** `layouts/sanguo.json` places blocks with `props.role`; `mods/sanguo/main.js` maps each role to its class.
-- **Reloads add up.** Every saved file reloads the mod in a running window, and about 25 reloads exhaust its memory. Batch edits, swap the mod folder in one go, check every role before it goes live, and restart the window after a run of tests.
+- **Every save reloads.** Every saved file reloads the mod in a running window, so a change spread over several files is live half-done until the last one is saved. Batch edits, swap the mod folder in one go, and check every role before it goes live. (Reloads no longer use up memory since Herdr 0.1.14.)
 - **Remote machines.** Anything that runs on a machine goes through `machine-script.js` (`runOn`) or `exec(..., { on })`. On a remote machine, what a command leaves running is killed when it returns, so wait for long work with `timeout` rather than detaching it.
 - **No `setTimeout`.** Use `cx.timer` or a task, and don't hold a handler's `cx` across an `await`.
 - **The pitfalls are in RECIPE.md** ("Watch out"), and that's where new ones go.
